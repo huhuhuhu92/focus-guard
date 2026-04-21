@@ -21,7 +21,7 @@ from focus_reminder.infrastructure.input.pynput_monitor import PynputInputMonito
 from focus_reminder.infrastructure.storage.config_repository import ConfigRepository
 from focus_reminder.infrastructure.storage.event_repository import ReminderEventRepository
 from focus_reminder.infrastructure.storage.sqlite_manager import SQLiteManager
-from focus_reminder.infrastructure.system.media_provider_stub import MediaStateProviderStub
+from focus_reminder.infrastructure.system.media_provider_heuristic import HeuristicMediaStateProvider
 from focus_reminder.infrastructure.system.window_provider import WindowStateProvider
 from focus_reminder.presentation.presenters.fullscreen_presenter import FullscreenPresenter
 from focus_reminder.presentation.presenters.notification_presenter import NotificationPresenter
@@ -48,13 +48,14 @@ class AppBootstrap(QObject):
         self._event_repo = ReminderEventRepository(self._sqlite)
 
         self._runtime_state = RuntimeState(last_active_time=time.monotonic())
+        window_provider = WindowStateProvider()
         self._scheduler = ReminderScheduler(
             config=self._config,
             runtime_state=self._runtime_state,
             idle_service=IdleService(),
             rule_engine=ReminderRuleEngine(),
-            media_state_provider=MediaStateProviderStub(),
-            window_state_provider=WindowStateProvider(),
+            media_state_provider=HeuristicMediaStateProvider(window_provider),
+            window_state_provider=window_provider,
         )
 
         self._input_monitor = PynputInputMonitor()

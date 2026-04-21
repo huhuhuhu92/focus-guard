@@ -52,7 +52,20 @@ class RuleEngineTests(unittest.TestCase):
         )
         self.assertEqual(result.decision, ReminderDecision.FULLSCREEN_REMINDER)
 
+    def test_audio_only_does_not_exempt_fullscreen(self) -> None:
+        engine = ReminderRuleEngine()
+        cfg = FocusConfig(idle_threshold_seconds=300, pre_reminder_seconds=60)
+        state = RuntimeState(last_active_time=0.0, pre_reminder_shown=False)
+
+        result = engine.evaluate(
+            config=cfg,
+            runtime_state=state,
+            idle_seconds=310,
+            media_state=MediaState.AUDIO_ONLY,
+            now_monotonic=310.0,
+        )
+        self.assertEqual(result.decision, ReminderDecision.FULLSCREEN_REMINDER)
+
 
 if __name__ == "__main__":
     unittest.main()
-
