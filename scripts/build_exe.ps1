@@ -1,5 +1,6 @@
 param(
-    [string]$PythonExe = ""
+    [string]$PythonExe = "",
+    [switch]$InstallDeps
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,6 +45,35 @@ function Resolve-PythonExecutable {
 
 $resolvedPython = Resolve-PythonExecutable -Preferred $PythonExe
 Write-Host "Using Python: $resolvedPython"
-& $resolvedPython -m focus_reminder.app.main
-exit $LASTEXITCODE
 
+if ($InstallDeps) {
+    & $resolvedPython -m pip install -r requirements.txt
+    if ($LASTEXITCODE -ne 0) {
+        throw "Dependency installation failed."
+    }
+}
+
+& $resolvedPython -m PyInstaller --noconfirm --clean focus_reminder/infrastructure/packaging/pyinstaller.spec
+if ($LASTEXITCODE -ne 0) {
+    throw "PyInstaller build failed."
+}
+
+$exeCandidates = @(
+    (Join-Path $projectRoot "dist\\FocusReminderDesktop\\FocusReminderDesktop.exe"),
+    (Join-Path $projectRoot "dist\\FocusReminderDesktop.exe")
+)
+
+$exePath = $null
+foreach ($candidate in $exeCandidates) {
+    if (Test-Path $candidate) {
+        $exePath = $candidate
+        break
+    }
+}
+
+if (-not $exePath) {
+    throw "Build completed but exe not found. Checked: $($exeCandidates -join '; ')"
+}
+
+Write-Host "Build OK: $exePath"
+exit 0

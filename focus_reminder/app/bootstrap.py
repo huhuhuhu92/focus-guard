@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 import time
 import uuid
 from datetime import datetime
@@ -18,6 +19,7 @@ from focus_reminder.domain.services.idle_service import IdleService
 from focus_reminder.domain.services.rule_engine import ReminderRuleEngine
 from focus_reminder.domain.services.scheduler import ReminderScheduler
 from focus_reminder.infrastructure.input.pynput_monitor import PynputInputMonitor
+from focus_reminder.infrastructure.input.win_last_input_monitor import WinLastInputMonitor
 from focus_reminder.infrastructure.storage.config_repository import ConfigRepository
 from focus_reminder.infrastructure.storage.event_repository import ReminderEventRepository
 from focus_reminder.infrastructure.storage.sqlite_manager import SQLiteManager
@@ -58,7 +60,7 @@ class AppBootstrap(QObject):
             window_state_provider=window_provider,
         )
 
-        self._input_monitor = PynputInputMonitor()
+        self._input_monitor = self._create_input_monitor()
         self._input_monitor.activity_detected.connect(self._on_activity_detected)
 
         self._pre_popup = PreReminderPopup()
@@ -215,6 +217,7 @@ class AppBootstrap(QObject):
         self._config_repo.save(self._config)
         self._scheduler.update_config(self._config)
         self._timer.setInterval(self._config.poll_interval_ms)
+        self._update_input_monitor_interval()
 
         if old_enabled != self._config.monitor_enabled:
             if self._config.monitor_enabled:
@@ -242,3 +245,15 @@ class AppBootstrap(QObject):
         self._scheduler.resume_monitoring()
         self._tray.show_message("Focus Reminder", "提醒已恢复。")
         logger.info("monitoring resumed from tray")
+
+    def _create_input_monitor(self):
+        if sys.platform == "win32":
+            monitor = WinLastInputMonitor(poll_interval_ms=min(500, self._config.poll_interval_ms))
+            if monitor.available:
+                return monitor
+        return PynputInputMonitor()
+
+    def _update_input_monitor_interval(self) -> None:
+        if hasattr(self._input_monitor, "set_poll_interval_ms"):
+            interval_ms = min(500, self._config.poll_interval_ms)
+            self._input_monitor.set_poll_interval_ms(interval_ms)

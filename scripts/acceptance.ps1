@@ -219,9 +219,19 @@ if ($RunPackaging) {
     $ok = (Invoke-Step -Name "PyInstaller packaging (optional)" -Required $false -Action {
             & $PythonExe -m PyInstaller --noconfirm --clean focus_reminder/infrastructure/packaging/pyinstaller.spec
             if ($LASTEXITCODE -ne 0) { throw "pyinstaller failed" }
-            $exePath = Join-Path $projectRoot "dist/FocusReminderDesktop/FocusReminderDesktop.exe"
-            if (-not (Test-Path $exePath)) {
-                throw "packaging finished but exe not found: $exePath"
+            $exeCandidates = @(
+                (Join-Path $projectRoot "dist/FocusReminderDesktop/FocusReminderDesktop.exe"),
+                (Join-Path $projectRoot "dist/FocusReminderDesktop.exe")
+            )
+            $exePath = $null
+            foreach ($candidate in $exeCandidates) {
+                if (Test-Path $candidate) {
+                    $exePath = $candidate
+                    break
+                }
+            }
+            if (-not $exePath) {
+                throw "packaging finished but exe not found. checked: $($exeCandidates -join '; ')"
             }
             Write-Host "packaging output: $exePath"
         }) -and $ok

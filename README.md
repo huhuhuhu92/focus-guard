@@ -14,6 +14,7 @@
 - 触发原因记录与分类统计
 - 基础媒体识别（启发式策略：前台进程 + 标题关键字）
 - 视频播放豁免提醒、音频播放不豁免提醒
+- Windows 原生低开销输入检测（GetLastInputInfo，降低鼠标卡顿风险）
 
 ## 目录结构
 
@@ -38,10 +39,16 @@ pip install -r requirements.txt
 python -m focus_reminder.app.main
 ```
 
-如果你使用已验证环境 `my_project_py311`，可直接运行：
+跨环境启动（自动优先使用当前激活的 `venv/conda`）：
 
 ```powershell
 .\scripts\run_focus_reminder.ps1
+```
+
+也可显式指定解释器：
+
+```powershell
+.\scripts\run_focus_reminder.ps1 -PythonExe "D:\condaData\envs_dirs\my_project_py311\python.exe"
 ```
 
 ## 自动化验收
@@ -57,11 +64,28 @@ python -m focus_reminder.app.main
 .\scripts\acceptance.ps1 -RunPackaging
 ```
 
-## 打包为 EXE
+## 打包为 EXE（给别人分发）
 
 ```bash
 pyinstaller focus_reminder/infrastructure/packaging/pyinstaller.spec
 ```
+
+推荐用脚本（同样支持自动识别当前环境）：
+
+```powershell
+.\scripts\build_exe.ps1
+```
+
+首次在新环境打包可加依赖安装：
+
+```powershell
+.\scripts\build_exe.ps1 -InstallDeps
+```
+
+打包后的程序会把运行数据写入用户目录：
+
+- `%APPDATA%\FocusReminderDesktop\config.json`
+- `%APPDATA%\FocusReminderDesktop\focus_reminder.db`
 
 ## 默认规则
 

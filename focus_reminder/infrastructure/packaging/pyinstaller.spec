@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-project_root = Path(__file__).resolve().parents[3]
+project_root = Path(SPECPATH).resolve().parents[2]
 main_script = project_root / "focus_reminder" / "app" / "main.py"
 
 block_cipher = None
@@ -13,7 +13,7 @@ a = Analysis(
     binaries=[],
     datas=[
         (str(project_root / "focus_reminder" / "resources"), "focus_reminder/resources"),
-        (str(project_root / "focus_reminder" / "data"), "focus_reminder/data"),
+        (str(project_root / "focus_reminder" / "data" / "config.json"), "focus_reminder/data"),
     ],
     hiddenimports=[],
     hookspath=[],
@@ -48,4 +48,3 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
-

@@ -103,12 +103,20 @@ class ReminderScheduler:
         elif evaluation.decision == ReminderDecision.FULLSCREEN_REMINDER:
             self.mark_fullscreen_displayed()
 
+        foreground_app = None
+        foreground_title = None
+        if evaluation.decision in (
+            ReminderDecision.PRE_REMINDER,
+            ReminderDecision.FULLSCREEN_REMINDER,
+        ):
+            foreground_app = self._window_state_provider.get_foreground_process_name()
+            foreground_title = self._window_state_provider.get_foreground_window_title()
+
         return TickResult(
             decision=evaluation.decision,
             reason=evaluation.reason,
             idle_seconds=idle_seconds,
             media_state=media_state,
-            foreground_app=self._window_state_provider.get_foreground_process_name(),
-            foreground_title=self._window_state_provider.get_foreground_window_title(),
+            foreground_app=foreground_app,
+            foreground_title=foreground_title,
         )
-
