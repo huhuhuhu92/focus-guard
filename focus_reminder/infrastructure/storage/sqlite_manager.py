@@ -24,6 +24,7 @@ class SQLiteManager:
                     idle_seconds INTEGER NOT NULL,
                     media_state TEXT NOT NULL,
                     dismiss_mode TEXT NOT NULL,
+                    trigger_reason TEXT,
                     dismiss_reason TEXT,
                     popup_duration_ms INTEGER,
                     foreground_app TEXT,
@@ -39,6 +40,7 @@ class SQLiteManager:
                 )
                 """
             )
+            self._ensure_column(conn, "reminder_events", "trigger_reason", "TEXT")
             conn.commit()
 
     def connect(self) -> sqlite3.Connection:
@@ -46,3 +48,15 @@ class SQLiteManager:
         conn.row_factory = sqlite3.Row
         return conn
 
+    def _ensure_column(
+        self,
+        conn: sqlite3.Connection,
+        table: str,
+        column: str,
+        ddl_type: str,
+    ) -> None:
+        rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+        existing = {row["name"] for row in rows}
+        if column in existing:
+            return
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}")

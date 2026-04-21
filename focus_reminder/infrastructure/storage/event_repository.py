@@ -17,8 +17,8 @@ class ReminderEventRepository:
                 """
                 INSERT INTO reminder_events (
                     id, level, triggered_at, idle_seconds, media_state, dismiss_mode,
-                    dismiss_reason, popup_duration_ms, foreground_app, foreground_title
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    trigger_reason, dismiss_reason, popup_duration_ms, foreground_app, foreground_title
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     event.event_id,
@@ -27,6 +27,7 @@ class ReminderEventRepository:
                     event.idle_seconds,
                     event.media_state.value,
                     event.dismiss_mode.value,
+                    event.trigger_reason,
                     event.dismiss_reason,
                     event.popup_duration_ms,
                     event.foreground_app,
@@ -114,6 +115,71 @@ class ReminderEventRepository:
             result.append((key, int(lookup.get(key, 0))))
         return result
 
+    def get_level_distribution(self, days: int = 7, now: Optional[datetime] = None) -> list[tuple[str, int]]:
+        start, end = self._range_for_days(days, now)
+        with self._sqlite.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT level AS key, COUNT(*) AS cnt
+                FROM reminder_events
+                WHERE triggered_at >= ? AND triggered_at < ?
+                GROUP BY level
+                """,
+                (
+                    start.isoformat(timespec="seconds"),
+                    end.isoformat(timespec="seconds"),
+                ),
+            ).fetchall()
+        counts = {row["key"]: int(row["cnt"]) for row in rows}
+        return [
+            ("pre_reminder", counts.get("pre_reminder", 0)),
+            ("fullscreen_reminder", counts.get("fullscreen_reminder", 0)),
+        ]
+
+    def get_dismiss_reason_distribution(
+        self,
+        days: int = 7,
+        now: Optional[datetime] = None,
+    ) -> list[tuple[str, int]]:
+        start, end = self._range_for_days(days, now)
+        with self._sqlite.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT COALESCE(NULLIF(TRIM(dismiss_reason), ''), 'pending') AS key, COUNT(*) AS cnt
+                FROM reminder_events
+                WHERE triggered_at >= ? AND triggered_at < ?
+                GROUP BY key
+                ORDER BY cnt DESC
+                """,
+                (
+                    start.isoformat(timespec="seconds"),
+                    end.isoformat(timespec="seconds"),
+                ),
+            ).fetchall()
+        return [(str(row["key"]), int(row["cnt"])) for row in rows]
+
+    def get_trigger_reason_distribution(
+        self,
+        days: int = 7,
+        now: Optional[datetime] = None,
+    ) -> list[tuple[str, int]]:
+        start, end = self._range_for_days(days, now)
+        with self._sqlite.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT COALESCE(NULLIF(TRIM(trigger_reason), ''), 'unknown') AS key, COUNT(*) AS cnt
+                FROM reminder_events
+                WHERE triggered_at >= ? AND triggered_at < ?
+                GROUP BY key
+                ORDER BY cnt DESC
+                """,
+                (
+                    start.isoformat(timespec="seconds"),
+                    end.isoformat(timespec="seconds"),
+                ),
+            ).fetchall()
+        return [(str(row["key"]), int(row["cnt"])) for row in rows]
+
     def _count_between(self, start: datetime, end: datetime) -> int:
         with self._sqlite.connect() as conn:
             row = conn.execute(
@@ -129,3 +195,9 @@ class ReminderEventRepository:
             ).fetchone()
         return int(row["cnt"]) if row else 0
 
+    def _range_for_days(self, days: int, now: Optional[datetime]) -> tuple[datetime, datetime]:
+        now = now or datetime.now()
+        safe_days = max(1, int(days))
+        end = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        start = end - timedelta(days=safe_days)
+        return start, end

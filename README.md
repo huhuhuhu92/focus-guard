@@ -1,6 +1,6 @@
-# Focus Reminder Desktop V1.1
+# Focus Reminder Desktop V1.2
 
-专注提醒工具的第一版可扩展桌面应用实现。
+专注提醒工具的第二版：在 V1.1 骨架上增强历史统计与可视化能力。
 
 ## 功能覆盖
 
@@ -10,7 +10,8 @@
 - 配置持久化（JSON）
 - 历史事件落库（SQLite）
 - 托盘运行与暂停/恢复
-- 统计窗口（今日计数、7天趋势、24小时分布、事件列表）
+- 统计窗口（折线图/柱状图/饼图 + 事件列表）
+- 触发原因记录与分类统计
 - 媒体识别接口预留（V1.1 使用 Stub）
 
 ## 目录结构
@@ -34,6 +35,12 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 python -m focus_reminder.app.main
+```
+
+如果你使用已验证环境 `my_project_py311`，可直接运行：
+
+```powershell
+.\scripts\run_focus_reminder.ps1
 ```
 
 ## 自动化验收

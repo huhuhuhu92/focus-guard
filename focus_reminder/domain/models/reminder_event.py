@@ -17,8 +17,8 @@ class ReminderEvent:
     idle_seconds: int
     media_state: MediaState
     dismiss_mode: DismissMode
+    trigger_reason: Optional[str] = None
     dismiss_reason: Optional[str] = None
     popup_duration_ms: Optional[int] = None
     foreground_app: Optional[str] = None
     foreground_title: Optional[str] = None
-

@@ -193,7 +193,7 @@ print("sqlite_ok")
     }) -and $ok
 
 $ok = (Invoke-Step -Name "Dependency import check" -Required $true -Action {
-        & $PythonExe -c "from PySide6 import QtCore, QtWidgets; import pynput, psutil, win32api; print('deps_ok', QtCore.__version__)"
+        & $PythonExe -c "from PySide6 import QtCore, QtWidgets, QtCharts; import pynput, psutil, win32api; print('deps_ok', QtCore.__version__, QtCharts.__name__)"
         if ($LASTEXITCODE -ne 0) { throw "required imports failed" }
     }) -and $ok
 
