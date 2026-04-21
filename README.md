@@ -1,0 +1,65 @@
+# Focus Reminder Desktop V1.1
+
+专注提醒工具的第一版可扩展桌面应用实现。
+
+## 功能覆盖
+
+- 全局输入监听（键盘/鼠标）
+- 两级提醒（轻提醒 + 强提醒）
+- 强提醒关闭策略（活动关闭 / 手动关闭）
+- 配置持久化（JSON）
+- 历史事件落库（SQLite）
+- 托盘运行与暂停/恢复
+- 统计窗口（今日计数、7天趋势、24小时分布、事件列表）
+- 媒体识别接口预留（V1.1 使用 Stub）
+
+## 目录结构
+
+```text
+focus_reminder/
+├─ app/
+├─ domain/
+├─ infrastructure/
+├─ presentation/
+├─ resources/
+└─ data/
+tests/
+requirements.txt
+```
+
+## 快速启动
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python -m focus_reminder.app.main
+```
+
+## 自动化验收
+
+```powershell
+.\scripts\acceptance.ps1
+```
+
+可选参数：
+
+```powershell
+.\scripts\acceptance.ps1 -RunGuiSmoke
+.\scripts\acceptance.ps1 -RunPackaging
+```
+
+## 打包为 EXE
+
+```bash
+pyinstaller focus_reminder/infrastructure/packaging/pyinstaller.spec
+```
+
+## 默认规则
+
+- 强提醒阈值：5 分钟
+- 轻提醒提前：60 秒
+- 轻提醒：开启
+- 强提醒关闭方式：检测到输入即关闭
+- 冷却时间：60 秒
+- 历史记录：开启

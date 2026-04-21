@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+build/
+dist/
+.vscode/
+tests/.tmp/
+acceptance_report.json
+image/
+
+# Runtime data
+focus_reminder/data/focus_reminder.db
