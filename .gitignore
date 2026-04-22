@@ -5,6 +5,7 @@ __pycache__/
 .venv/
 build/
 dist/
+release/
 node_modules/
 frontend/node_modules/
 .vscode/

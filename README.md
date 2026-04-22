@@ -82,6 +82,14 @@ pyinstaller focus_reminder/infrastructure/packaging/pyinstaller.spec
 .\scripts\build_exe.ps1 -InstallDeps
 ```
 
+Win x64 无终端发布包（校验 EXE 为 x64 + GUI 子系统）：
+
+```powershell
+.\scripts\build_release_win_x64.ps1 -Zip
+```
+
+产物输出到 `release/win-x64`（以及可选 zip）。
+
 ## 默认规则
 
 - 强提醒阈值：5 分钟
