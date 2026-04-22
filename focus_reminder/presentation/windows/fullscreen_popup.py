@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
 from focus_reminder.domain.enums.dismiss_mode import DismissMode
 
@@ -24,39 +24,68 @@ class FullscreenPopup(QDialog):
         self.setStyleSheet(
             """
             QDialog {
-                background-color: rgba(7, 10, 24, 220);
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(30, 6, 10, 245),
+                    stop:1 rgba(14, 4, 6, 245)
+                );
+            }
+            QFrame#panel {
+                background-color: rgba(55, 11, 16, 232);
+                border: 2px solid rgba(182, 66, 77, 232);
+                border-radius: 20px;
+                min-width: 760px;
+                max-width: 900px;
+            }
+            QLabel#title {
+                color: #ffb6bc;
+                font-size: 20px;
+                font-weight: 700;
+                letter-spacing: 2px;
             }
             QLabel#message {
-                color: #ffffff;
-                font-size: 30px;
-                font-weight: bold;
+                color: #fff3f4;
+                font-size: 34px;
+                font-weight: 700;
             }
             QLabel#hint {
-                color: #9cc4ff;
-                font-size: 16px;
+                color: #f1b3b9;
+                font-size: 18px;
             }
             QPushButton {
-                padding: 10px 28px;
-                border-radius: 8px;
-                color: #f5f8ff;
-                background: #1f4fff;
-                font-size: 16px;
+                padding: 12px 34px;
+                border-radius: 12px;
+                border: 1px solid #f4adb5;
+                color: #fff2f3;
+                background: #8f1f2a;
+                font-size: 18px;
+                font-weight: 600;
             }
             QPushButton:hover {
-                background: #3d67ff;
+                background: #ab2c39;
+                border-color: #ffd0d4;
             }
             """
         )
 
-        self._message_label = QLabel("", self)
+        panel = QFrame(self)
+        panel.setObjectName("panel")
+
+        self._title_label = QLabel("低专注提醒", panel)
+        self._title_label.setObjectName("title")
+        self._title_label.setAlignment(Qt.AlignCenter)
+
+        self._message_label = QLabel("", panel)
         self._message_label.setObjectName("message")
         self._message_label.setAlignment(Qt.AlignCenter)
+        self._message_label.setWordWrap(True)
 
-        self._hint_label = QLabel("", self)
+        self._hint_label = QLabel("", panel)
         self._hint_label.setObjectName("hint")
         self._hint_label.setAlignment(Qt.AlignCenter)
+        self._hint_label.setWordWrap(True)
 
-        self._close_btn = QPushButton("我已回到任务", self)
+        self._close_btn = QPushButton("我已回到任务", panel)
         self._close_btn.clicked.connect(self._on_manual_close)
 
         button_row = QHBoxLayout()
@@ -64,16 +93,22 @@ class FullscreenPopup(QDialog):
         button_row.addWidget(self._close_btn)
         button_row.addStretch(1)
 
-        layout = QVBoxLayout()
-        layout.setContentsMargins(40, 40, 40, 40)
-        layout.addStretch(1)
-        layout.addWidget(self._message_label)
-        layout.addSpacing(12)
-        layout.addWidget(self._hint_label)
-        layout.addSpacing(28)
-        layout.addLayout(button_row)
-        layout.addStretch(1)
-        self.setLayout(layout)
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(48, 40, 48, 36)
+        panel_layout.setSpacing(14)
+        panel_layout.addWidget(self._title_label)
+        panel_layout.addSpacing(8)
+        panel_layout.addWidget(self._message_label)
+        panel_layout.addWidget(self._hint_label)
+        panel_layout.addSpacing(18)
+        panel_layout.addLayout(button_row)
+
+        root_layout = QVBoxLayout()
+        root_layout.setContentsMargins(56, 40, 56, 40)
+        root_layout.addStretch(1)
+        root_layout.addWidget(panel, 0, Qt.AlignCenter)
+        root_layout.addStretch(1)
+        self.setLayout(root_layout)
 
     def show_popup(
         self,

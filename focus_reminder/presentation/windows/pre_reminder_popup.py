@@ -14,22 +14,24 @@ class PreReminderPopup(QWidget):
 
         self._message = QLabel("", self)
         self._message.setWordWrap(True)
-        self._message.setStyleSheet("color: #f5f7ff; font-size: 14px;")
+        self._message.setStyleSheet(
+            "color: #ffe9eb; font-size: 15px; font-weight: 600; line-height: 1.25;"
+        )
 
         layout = QVBoxLayout()
-        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setContentsMargins(16, 13, 16, 13)
         layout.addWidget(self._message)
         self.setLayout(layout)
         self.setStyleSheet(
             """
             QWidget {
-                background-color: rgba(21, 26, 56, 230);
-                border: 1px solid rgba(116, 146, 255, 200);
+                background-color: rgba(63, 12, 18, 236);
+                border: 1px solid rgba(210, 103, 113, 220);
                 border-radius: 12px;
             }
             """
         )
-        self.resize(340, 110)
+        self.resize(350, 112)
 
     def show_message(self, message: str, timeout_ms: int = 4000) -> None:
         self._message.setText(message)
