@@ -1,9 +1,9 @@
-"""Neumorphic statistics window — port of frontend/src/components/Statistics.tsx.
+"""Neumorphic statistics window for the desktop app.
 
 Signals preserved:
     open_settings_requested()
 
-Data source: ReminderEventRepository (same as before; no backend changes).
+Data source: ReminderEventRepository.
 """
 from __future__ import annotations
 

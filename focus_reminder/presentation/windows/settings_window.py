@@ -1,4 +1,4 @@
-"""Neumorphic settings window — 1:1 port of frontend/src/components/Settings.tsx.
+"""Neumorphic settings window for the desktop app.
 
 Signals preserved (bootstrap.py requires them):
     config_saved(FocusConfig)
