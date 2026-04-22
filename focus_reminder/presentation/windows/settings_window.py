@@ -1,22 +1,41 @@
+"""Neumorphic settings window — 1:1 port of frontend/src/components/Settings.tsx.
+
+Signals preserved (bootstrap.py requires them):
+    config_saved(FocusConfig)
+    clear_history_requested()
+    open_stats_requested()
+"""
 from __future__ import annotations
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QCheckBox,
-    QComboBox,
-    QFormLayout,
-    QGroupBox,
+    QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
-    QPushButton,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
 from focus_reminder.domain.enums.dismiss_mode import DismissMode
 from focus_reminder.domain.models.config import FocusConfig
+
+from ._neumorphic import (
+    FS_STATUS,
+    MUTED,
+    TEXT,
+    BrandBlock,
+    LabeledToggle,
+    LineCircleButton,
+    LinePillButton,
+    NeumorphicCard,
+    PillLineEdit,
+    PillSelect,
+    SectionTitle,
+    StepperField,
+    TabPill,
+    root_stylesheet,
+)
 
 
 class SettingsWindow(QWidget):
@@ -26,90 +45,202 @@ class SettingsWindow(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
+        self.setObjectName("focusRoot")
         self.setWindowTitle("Focus Reminder 设置")
-        self.resize(640, 560)
+        self.setFixedSize(760, 760)
+        self.setStyleSheet(root_stylesheet())
         self._build_ui()
 
+    # ------------------------------------------------------------------ UI
     def _build_ui(self) -> None:
-        self._idle_minutes = QSpinBox(self)
-        self._idle_minutes.setRange(1, 180)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
 
-        self._enable_pre = QCheckBox("启用轻提醒", self)
-        self._pre_seconds = QSpinBox(self)
-        self._pre_seconds.setRange(0, 600)
+        content = QWidget(self)
+        content.setObjectName("focusContent")
+        root.addWidget(content)
 
-        self._cooldown_seconds = QSpinBox(self)
-        self._cooldown_seconds.setRange(0, 3600)
+        outer = QVBoxLayout(content)
+        outer.setContentsMargins(24, 24, 24, 24)
+        outer.setSpacing(14)
 
-        self._dismiss_mode = QComboBox(self)
-        self._dismiss_mode.addItem("检测到输入即关闭", DismissMode.ACTIVITY.value)
-        self._dismiss_mode.addItem("必须手动点击关闭", DismissMode.MANUAL.value)
+        # ---- Header: brand + tabs --------------------------------------
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        header.addWidget(BrandBlock(self))
+        header.addStretch(1)
+        tabs = TabPill("settings", self)
+        tabs.activeTabChanged.connect(self._on_tab_changed)
+        header.addWidget(tabs)
+        outer.addLayout(header)
+        self._tabs = tabs
 
-        self._fullscreen_topmost = QCheckBox("强提醒置顶", self)
-        self._fullscreen_overlay = QCheckBox("强提醒全屏遮罩", self)
+        # ---- Grid: 6-column mimicking Tailwind md:grid-cols-6 ----------
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(16)
+        grid.setVerticalSpacing(16)
+        for col in range(6):
+            grid.setColumnStretch(col, 1)
 
-        self._enable_history = QCheckBox("记录提醒历史", self)
-        self._monitor_enabled = QCheckBox("启动监控", self)
-        self._start_minimized = QCheckBox("启动最小化到托盘", self)
+        # Row 0: base(4) + run(2)
+        base_card = self._build_base_card()
+        run_card = self._build_run_card()
+        self._lock_card_height(base_card, 290)
+        self._lock_card_height(run_card, 290)
+        grid.addWidget(base_card, 0, 0, 1, 4)
+        grid.addWidget(run_card, 0, 4, 1, 2)
 
-        self._poll_interval = QSpinBox(self)
-        self._poll_interval.setRange(250, 5000)
-        self._poll_interval.setSingleStep(250)
+        # Row 1: behavior(3) + copy(3)
+        behavior_card = self._build_behavior_card()
+        copy_card = self._build_copy_card()
+        self._lock_card_height(behavior_card, 246)
+        self._lock_card_height(copy_card, 246)
+        grid.addWidget(behavior_card, 1, 0, 1, 3)
+        grid.addWidget(copy_card, 1, 3, 1, 3)
 
-        self._pre_message = QLineEdit(self)
-        self._fullscreen_message = QLineEdit(self)
+        outer.addLayout(grid)
+        outer.addLayout(self._build_footer())
+        outer.addStretch(1)
 
-        base_form = QFormLayout()
-        base_form.addRow("强提醒阈值(分钟)", self._idle_minutes)
-        base_form.addRow(self._enable_pre)
-        base_form.addRow("轻提醒提前(秒)", self._pre_seconds)
-        base_form.addRow("冷却时间(秒)", self._cooldown_seconds)
-        base_form.addRow("检查周期(ms)", self._poll_interval)
-        base_group = QGroupBox("基础设置", self)
-        base_group.setLayout(base_form)
+    # ---------------------- Cards ---------------------------------------
+    def _build_base_card(self) -> NeumorphicCard:
+        card = NeumorphicCard(radius=22)
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(24, 22, 24, 22)
+        lay.setSpacing(14)
+        lay.addWidget(SectionTitle("基础设置", "THRESHOLD", card))
 
-        behavior_form = QFormLayout()
-        behavior_form.addRow("强提醒关闭方式", self._dismiss_mode)
-        behavior_form.addRow(self._fullscreen_topmost)
-        behavior_form.addRow(self._fullscreen_overlay)
-        behavior_form.addRow("轻提醒文案", self._pre_message)
-        behavior_form.addRow("强提醒文案", self._fullscreen_message)
-        behavior_group = QGroupBox("提醒行为", self)
-        behavior_group.setLayout(behavior_form)
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(14)
+        grid.setVerticalSpacing(12)
 
-        data_form = QFormLayout()
-        data_form.addRow(self._enable_history)
-        data_form.addRow(self._monitor_enabled)
-        data_form.addRow(self._start_minimized)
-        data_group = QGroupBox("数据与运行", self)
-        data_group.setLayout(data_form)
+        self._idle_minutes = StepperField("强提醒阈值", "分钟", 1, 180, 1, card)
+        self._pre_seconds = StepperField("轻提醒提前", "秒", 0, 600, 5, card)
+        self._cooldown_seconds = StepperField("冷却时间", "秒", 0, 3600, 5, card)
+        self._poll_interval = StepperField("检查周期", "ms", 250, 5000, 100, card)
 
-        self._status_label = QLabel("", self)
-        self._status_label.setStyleSheet("color: #2b579a;")
+        grid.addWidget(self._idle_minutes, 0, 0)
+        grid.addWidget(self._pre_seconds, 0, 1)
+        grid.addWidget(self._cooldown_seconds, 1, 0)
+        grid.addWidget(self._poll_interval, 1, 1)
+        lay.addLayout(grid)
 
-        save_btn = QPushButton("保存配置", self)
+        spacer = QFrame(card)
+        spacer.setFixedHeight(1)
+        spacer.setStyleSheet("background: rgba(0,0,0,0.04);")
+        lay.addSpacing(4)
+        lay.addWidget(spacer)
+
+        self._enable_pre = LabeledToggle("启用轻提醒", card)
+        lay.addWidget(self._enable_pre)
+        lay.addStretch(1)
+        return card
+
+    def _build_run_card(self) -> NeumorphicCard:
+        card = NeumorphicCard(radius=22)
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(24, 22, 24, 22)
+        lay.setSpacing(14)
+        lay.addWidget(SectionTitle("数据与运行", "RUN", card))
+        self._monitor_enabled = LabeledToggle("启动监控", card)
+        self._start_minimized = LabeledToggle("最小化到托盘", card)
+        self._enable_history = LabeledToggle("记录提醒历史", card)
+        lay.addWidget(self._monitor_enabled)
+        lay.addWidget(self._start_minimized)
+        lay.addWidget(self._enable_history)
+        lay.addStretch(1)
+        return card
+
+    def _build_behavior_card(self) -> NeumorphicCard:
+        card = NeumorphicCard(radius=22)
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(24, 22, 24, 22)
+        lay.setSpacing(14)
+        lay.addWidget(SectionTitle("提醒行为", "ALERT", card))
+
+        dismiss_wrap = QVBoxLayout()
+        dismiss_wrap.setContentsMargins(0, 0, 0, 0)
+        dismiss_wrap.setSpacing(6)
+        from ._neumorphic import CapsLabel
+        dismiss_wrap.addWidget(CapsLabel("强提醒关闭方式", card))
+        self._dismiss_mode = PillSelect(
+            [
+                ("检测到输入即关闭", DismissMode.ACTIVITY.value),
+                ("手动关闭", DismissMode.MANUAL.value),
+            ],
+            card,
+        )
+        dismiss_wrap.addWidget(self._dismiss_mode)
+        lay.addLayout(dismiss_wrap)
+
+        self._fullscreen_topmost = LabeledToggle("强提醒置顶", card)
+        self._fullscreen_overlay = LabeledToggle("强提醒全屏遮罩", card)
+        lay.addWidget(self._fullscreen_topmost)
+        lay.addWidget(self._fullscreen_overlay)
+        lay.addStretch(1)
+        return card
+
+    def _build_copy_card(self) -> NeumorphicCard:
+        card = NeumorphicCard(radius=22)
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(24, 22, 24, 22)
+        lay.setSpacing(14)
+        lay.addWidget(SectionTitle("提醒文案", "COPY", card))
+
+        from ._neumorphic import CapsLabel
+        for label_text, attr in (
+            ("轻提醒文案", "_pre_message"),
+            ("强提醒文案", "_fullscreen_message"),
+        ):
+            box = QVBoxLayout()
+            box.setContentsMargins(0, 0, 0, 0)
+            box.setSpacing(6)
+            box.addWidget(CapsLabel(label_text, card))
+            field = PillLineEdit(card)
+            setattr(self, attr, field)
+            box.addWidget(field)
+            lay.addLayout(box)
+        lay.addStretch(1)
+        return card
+
+    def _build_footer(self) -> QHBoxLayout:
+        row = QHBoxLayout()
+        row.setContentsMargins(6, 0, 6, 0)
+        row.setSpacing(10)
+
+        self._status_dot = QLabel("●", self)
+        self._status_dot.setStyleSheet(f"color:{TEXT}; font-size:{FS_STATUS + 1}px;")
+        self._status_label = QLabel("加载中...", self)
+        self._status_label.setStyleSheet(
+            f"color:{MUTED}; font-size:{FS_STATUS + 1}px; font-weight:400; letter-spacing:2px;"
+        )
+        row.addWidget(self._status_dot)
+        row.addWidget(self._status_label)
+        row.addStretch(1)
+
+        save_btn = LinePillButton("保存配置", "save", self)
         save_btn.clicked.connect(self._on_save)
+        row.addWidget(save_btn)
 
-        stats_btn = QPushButton("查看统计", self)
+        stats_btn = LineCircleButton("stats", "查看统计", self)
         stats_btn.clicked.connect(self.open_stats_requested.emit)
+        row.addWidget(stats_btn)
 
-        clear_btn = QPushButton("清空历史", self)
+        clear_btn = LineCircleButton("trash", "清空历史", self)
         clear_btn.clicked.connect(self.clear_history_requested.emit)
+        row.addWidget(clear_btn)
+        return row
 
-        btn_row = QHBoxLayout()
-        btn_row.addWidget(save_btn)
-        btn_row.addWidget(stats_btn)
-        btn_row.addWidget(clear_btn)
-        btn_row.addStretch(1)
+    def _lock_card_height(self, card: NeumorphicCard, height: int) -> None:
+        card.setMinimumHeight(height)
+        card.setMaximumHeight(height)
 
-        layout = QVBoxLayout()
-        layout.addWidget(base_group)
-        layout.addWidget(behavior_group)
-        layout.addWidget(data_group)
-        layout.addLayout(btn_row)
-        layout.addWidget(self._status_label)
-        layout.addStretch(1)
-        self.setLayout(layout)
+    # ------------------------------------------------------- Logic -----
+    def _on_tab_changed(self, key: str) -> None:
+        if key == "statistics":
+            self.open_stats_requested.emit()
+            self._tabs._active = "settings"
+            self._tabs._refresh()
 
     def load_config(self, config: FocusConfig) -> None:
         self._idle_minutes.setValue(max(1, config.idle_threshold_seconds // 60))
@@ -127,16 +258,16 @@ class SettingsWindow(QWidget):
         self._start_minimized.setChecked(config.start_minimized_to_tray)
         self._pre_message.setText(config.pre_reminder_message)
         self._fullscreen_message.setText(config.fullscreen_message)
-        self._status_label.setText("配置已加载")
+        self._set_status("配置已加载")
 
     def _on_save(self) -> None:
-        selected_mode = DismissMode(self._dismiss_mode.currentData())
+        mode = DismissMode(self._dismiss_mode.currentData())
         cfg = FocusConfig(
             idle_threshold_seconds=self._idle_minutes.value() * 60,
             pre_reminder_seconds=self._pre_seconds.value(),
             enable_pre_reminder=self._enable_pre.isChecked(),
             cooldown_seconds=self._cooldown_seconds.value(),
-            dismiss_mode=selected_mode,
+            dismiss_mode=mode,
             enable_history=self._enable_history.isChecked(),
             monitor_enabled=self._monitor_enabled.isChecked(),
             poll_interval_ms=self._poll_interval.value(),
@@ -146,6 +277,8 @@ class SettingsWindow(QWidget):
             fullscreen_overlay=self._fullscreen_overlay.isChecked(),
             start_minimized_to_tray=self._start_minimized.isChecked(),
         ).sanitized()
-        self._status_label.setText("配置已保存")
+        self._set_status("配置已保存")
         self.config_saved.emit(cfg)
 
+    def _set_status(self, text: str) -> None:
+        self._status_label.setText(text)

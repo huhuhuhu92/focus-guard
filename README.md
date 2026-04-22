@@ -82,11 +82,6 @@ pyinstaller focus_reminder/infrastructure/packaging/pyinstaller.spec
 .\scripts\build_exe.ps1 -InstallDeps
 ```
 
-打包后的程序会把运行数据写入用户目录：
-
-- `%APPDATA%\FocusReminderDesktop\config.json`
-- `%APPDATA%\FocusReminderDesktop\focus_reminder.db`
-
 ## 默认规则
 
 - 强提醒阈值：5 分钟

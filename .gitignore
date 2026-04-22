@@ -5,6 +5,8 @@ __pycache__/
 .venv/
 build/
 dist/
+node_modules/
+frontend/node_modules/
 .vscode/
 tests/.tmp/
 acceptance_report.json

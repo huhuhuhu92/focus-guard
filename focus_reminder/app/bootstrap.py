@@ -76,6 +76,7 @@ class AppBootstrap(QObject):
 
         self._stats_window = StatsWindow(self._event_repo)
         self._settings_window.open_stats_requested.connect(self.show_stats_window)
+        self._stats_window.open_settings_requested.connect(self.show_settings_window)
 
         self._tray = TrayController(self._app)
         self._tray.open_settings_requested.connect(self.show_settings_window)
@@ -117,12 +118,18 @@ class AppBootstrap(QObject):
 
     def show_settings_window(self) -> None:
         self._settings_window.load_config(self._config)
+        if self._stats_window.isVisible():
+            self._settings_window.setGeometry(self._stats_window.geometry())
+            self._stats_window.hide()
         self._settings_window.show()
         self._settings_window.raise_()
         self._settings_window.activateWindow()
 
     def show_stats_window(self) -> None:
         self._stats_window.refresh()
+        if self._settings_window.isVisible():
+            self._stats_window.setGeometry(self._settings_window.geometry())
+            self._settings_window.hide()
         self._stats_window.show()
         self._stats_window.raise_()
         self._stats_window.activateWindow()
