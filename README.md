@@ -88,7 +88,8 @@ Win x64 无终端发布包（校验 EXE 为 x64 + GUI 子系统）：
 .\scripts\build_release_win_x64.ps1 -Zip
 ```
 
-产物输出到 `release/win-x64`（以及可选 zip）。
+产物输出到 `release/win-x64`（以及可选 zip），双击 `release/win-x64/FocusReminderDesktop.exe` 运行。  
+注意：`_internal/` 目录必须和 `FocusReminderDesktop.exe` 保持同级。
 
 ## 默认规则
 

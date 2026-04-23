@@ -104,7 +104,7 @@ $distFolder = Join-Path $projectRoot "dist\\FocusReminderDesktop"
 $onefileExe = Join-Path $projectRoot "dist\\FocusReminderDesktop.exe"
 $onedirExe = Join-Path $distFolder "FocusReminderDesktop.exe"
 
-$exePath = if (Test-Path $onefileExe) { $onefileExe } elseif (Test-Path $onedirExe) { $onedirExe } else { $null }
+$exePath = if (Test-Path $onedirExe) { $onedirExe } elseif (Test-Path $onefileExe) { $onefileExe } else { $null }
 if (-not $exePath) {
     throw "Build completed but EXE was not found."
 }
@@ -121,10 +121,13 @@ Write-Host "Validated EXE: x64 + GUI subsystem (no terminal window)."
 
 $releaseRoot = Join-Path $projectRoot "release\\win-x64"
 Remove-Item -LiteralPath $releaseRoot -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Path $releaseRoot | Out-Null
+if (Test-Path $releaseRoot) {
+    throw "Cannot clean $releaseRoot. Close any running FocusReminderDesktop.exe and rerun."
+}
+New-Item -ItemType Directory -Path $releaseRoot -Force | Out-Null
 
 if (Test-Path $distFolder) {
-    Copy-Item -LiteralPath $distFolder -Destination $releaseRoot -Recurse -Force
+    Copy-Item -Path (Join-Path $distFolder "*") -Destination $releaseRoot -Recurse -Force
 } else {
     Copy-Item -LiteralPath $onefileExe -Destination $releaseRoot -Force
 }
@@ -135,8 +138,9 @@ Focus Reminder Desktop (Win x64)
 
 How to run:
 1. Double click FocusReminderDesktop.exe
-2. No terminal window is expected.
-3. The app runs in system tray; use tray menu to open settings/statistics.
+2. Keep the _internal folder next to FocusReminderDesktop.exe (if present).
+3. No terminal window is expected.
+4. The app runs in system tray; use tray menu to open settings/statistics.
 "@
 
 if ($Zip) {
