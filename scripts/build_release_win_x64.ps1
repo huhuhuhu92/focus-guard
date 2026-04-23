@@ -138,7 +138,7 @@ Focus Reminder Desktop (Win x64)
 
 How to run:
 1. Double click FocusReminderDesktop.exe
-2. Keep the _internal folder next to FocusReminderDesktop.exe (if present).
+2. Keep all files in this folder together; do not move the exe alone.
 3. No terminal window is expected.
 4. The app runs in system tray; use tray menu to open settings/statistics.
 "@

@@ -5,6 +5,7 @@ from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 
 project_root = Path(SPECPATH).resolve().parents[2]
 main_script = project_root / "focus_reminder" / "app" / "main.py"
+runtime_hook = project_root / "focus_reminder" / "infrastructure" / "packaging" / "runtime_hook_dll_path.py"
 
 block_cipher = None
 
@@ -23,7 +24,7 @@ a = Analysis(
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=[str(runtime_hook)],
     excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
